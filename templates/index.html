@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h4 class="text-center mb-4">Fill Details to Generate Paper</h4>
+<form method="POST" action="/generate" enctype="multipart/form-data">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">College Name</label>
+            <input type="text" class="form-control" name="college_name" value="" placeholder="National Academy of Science and Technology" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">College Address</label>
+            <input type="text" class="form-control" name="college_address" value="" placeholder="eg. Uttar Behadhi-4, Dhangadhi,Kailali" required>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Exam Type</label>
+            <input type="text" class="form-control" name="exam_type" value="" placeholder="eg.Final Assessment" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Program</label>
+            <input type="text" class="form-control" name="program" value="" placeholder="eg. BE Computer" required>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Semester</label>
+            <select class="form-select" name="semester" required>
+                <option value="" selected>Semester</option>
+                <option>I</option><option>II</option><option>III</option><option>IV</option>
+                <option>V</option><option>VI</option><option>VII</option><option>VIII</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Course Name</label>
+            <input type="text" class="form-control" name="course_name" value="" placeholder="eg. DataScience" required>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Year</label>
+            <input type="number" class="form-control" name="year" value="" placeholder="eg. 2025" required>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Full Marks</label>
+            <input type="number" class="form-control" name="full_marks" value="100" readonly>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Pass Marks</label>
+            <input type="number" class="form-control" name="pass_marks" value="45" readonly>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Time (hrs)</label>
+            <input type="number" class="form-control" name="time_hours" value="3" readonly>
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">Syllabus / Topics (Paste here)</label>
+            <textarea class="form-control" name="syllabus" rows="6" placeholder="List chapters or topics..."></textarea>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Upload Syllabus PDF (Optional)</label>
+            <input type="file" class="form-control" name="syllabus_pdf" accept=".pdf">
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Upload Old Question Papers (Optional)</label>
+            <input type="file" class="form-control" name="old_papers" multiple accept=".pdf">
+            <small class="text-muted">AI will rephrase and mix questions</small>
+        </div>
+
+        <div class="col-12 text-center mt-4">
+            <button type="submit" class="btn btn-success btn-lg px-5">
+                Generate & Download .docx
+            </button>
+        </div>
+    </div>
+</form>
+{% endblock %}
