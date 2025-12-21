@@ -73,5 +73,11 @@ def generate():
 
     return send_file(filename, as_attachment=True, download_name=filename)
 
+# if __name__ == '__main__':
+#     app.run(debug=True)
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Render provides a 'PORT' environment variable. If it's not there, use 10000.
+    port = int(os.environ.get("PORT", 10000))
+    # '0.0.0.0' tells the OS to listen on all public IPs (required for Render)
+    app.run(host='0.0.0.0', port=port)
