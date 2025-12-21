@@ -76,8 +76,18 @@ def generate():
 # if __name__ == '__main__':
 #     app.run(debug=True)
 
+# if __name__ == '__main__':
+#     # Render provides a 'PORT' environment variable. If it's not there, use 10000.
+#     port = int(os.environ.get("PORT", 10000))
+#     # '0.0.0.0' tells the OS to listen on all public IPs (required for Render)
+#     app.run(host='0.0.0.0', port=port)
+
+# ... (Keep all your imports and logic exactly as they are) ...
+
 if __name__ == '__main__':
-    # Render provides a 'PORT' environment variable. If it's not there, use 10000.
-    port = int(os.environ.get("PORT", 10000))
-    # '0.0.0.0' tells the OS to listen on all public IPs (required for Render)
+    # Koyeb uses 'PORT' environment variable (usually 8000 or 8080)
+    # If not found, it defaults to 8080 for safety
+    port = int(os.environ.get("PORT", 8080))
+    
+    # Must use 0.0.0.0 to be accessible externally
     app.run(host='0.0.0.0', port=port)
