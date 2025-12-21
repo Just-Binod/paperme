@@ -15,6 +15,10 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def index():
     return render_template('index.html')
 
+@app.route('/health')
+def health_check():
+    return "OK", 200
+
 @app.route('/generate', methods=['POST'])
 def generate():
     # Collect form data
