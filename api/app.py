@@ -1,3 +1,17 @@
+# from flask import Flask, render_template, request, send_file, flash, redirect, url_for
+# import os
+# from utils.ai_generator import generate_questions
+# from utils.docx_generator import create_question_paper_doc
+# from utils.pdf_extractor import extract_text_from_pdf
+# from werkzeug.utils import secure_filename
+
+# app = Flask(__name__)
+# app.secret_key = "supersecretkey"
+# UPLOAD_FOLDER = 'uploads'
+# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+##
 from flask import Flask, render_template, request, send_file, flash, redirect, url_for
 import os
 from utils.ai_generator import generate_questions
@@ -5,11 +19,13 @@ from utils.docx_generator import create_question_paper_doc
 from utils.pdf_extractor import extract_text_from_pdf
 from werkzeug.utils import secure_filename
 
-app = Flask(__name__)
-app.secret_key = "supersecretkey"
-UPLOAD_FOLDER = 'uploads'
+app = Flask(__name__, template_folder='../templates', static_folder='../static')  # Adjust paths since app is in api/
+app.secret_key = os.environ.get("SECRET_KEY", "supersecretkey")  # Use env var for production
+UPLOAD_FOLDER = '/tmp/uploads'  # MUST use /tmp – only writable place!
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+##
+
 
 @app.route('/')
 def index():
@@ -84,10 +100,10 @@ def generate():
 
 # ... (Keep all your imports and logic exactly as they are) ...
 
-if __name__ == '__main__':
-    # Koyeb uses 'PORT' environment variable (usually 8000 or 8080)
-    # If not found, it defaults to 8080 for safety
-    port = int(os.environ.get("PORT", 8080))
+# if __name__ == '__main__':
+#     # Koyeb uses 'PORT' environment variable (usually 8000 or 8080)
+#     # If not found, it defaults to 8080 for safety
+#     port = int(os.environ.get("PORT", 8080))
     
-    # Must use 0.0.0.0 to be accessible externally
-    app.run(host='0.0.0.0', port=port)
+#     # Must use 0.0.0.0 to be accessible externally
+#     app.run(host='0.0.0.0', port=port)

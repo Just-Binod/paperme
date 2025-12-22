@@ -5,3 +5,4 @@ pdfplumber==0.11.4
 python-dotenv==1.0.1
 gunicorn
 openai
+werkzeug
