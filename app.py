@@ -118,145 +118,30 @@
 
 
 
-# ####
-# from flask import Flask, render_template, request, send_file, flash, redirect, url_for
-# import os
-# from utils.ai_generator import generate_questions
-# from utils.docx_generator import create_question_paper_doc
-# from utils.pdf_extractor import extract_text_from_pdf
-# from werkzeug.utils import secure_filename
-
-# app = Flask(__name__)
-
-# # Use environment variable for secret key (set in Replit Secrets)
-# app.secret_key = os.environ.get('SECRET_KEY', 'supersecretkey-change-in-secrets')
-
-# # Use 'uploads' folder — it is persistent on Replit
-# UPLOAD_FOLDER = 'uploads'
-# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# # Create uploads folder if it doesn't exist
-# os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# @app.route('/')
-# def index():
-#     return render_template('index.html')
-
-
-# @app.route('/generate', methods=['POST'])
-# def generate():
-#     # Collect form data
-#     data = {
-#         'college_name': request.form.get('college_name', ''),
-#         'college_address': request.form.get('college_address', ''),
-#         'exam_type': request.form.get('exam_type', ''),
-#         'program': request.form.get('program', ''),
-#         'semester': request.form.get('semester', ''),
-#         'course_name': request.form.get('course_name', ''),
-#         'year': request.form.get('year', ''),
-#         'full_marks': request.form.get('full_marks', ''),
-#         'pass_marks': request.form.get('pass_marks', ''),
-#         'time_hours': request.form.get('time_hours', ''),
-#         'syllabus': request.form.get('syllabus', '')
-#     }
-
-#     syllabus_text = data['syllabus']
-#     old_text = ""
-
-#     # Handle syllabus PDF upload
-#     if 'syllabus_pdf' in request.files:
-#         file = request.files['syllabus_pdf']
-#         if file and file.filename:
-#             filename = secure_filename(file.filename)
-#             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-#             file.save(filepath)
-#             try:
-#                 syllabus_text += "\n\n" + extract_text_from_pdf(filepath)
-#             except Exception as e:
-#                 flash(f"Error reading syllabus PDF: {str(e)}")
-#             # Optional: delete after processing to save space
-#             # os.remove(filepath)
-
-#     # Handle old question papers (multiple files)
-#     if 'old_papers' in request.files:
-#         files = request.files.getlist('old_papers')
-#         for file in files:
-#             if file and file.filename:
-#                 filename = secure_filename(file.filename)
-#                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-#                 file.save(filepath)
-#                 try:
-#                     old_text += extract_text_from_pdf(filepath) + "\n"
-#                 except Exception as e:
-#                     flash(f"Error reading old paper {filename}: {str(e)}")
-#                 # Optional: delete after extraction
-#                 # os.remove(filepath)
-
-#     old_context = f"Reference previous questions (rephrase all):\n{old_text[:4000]}" if old_text else ""
-
-#     # Generate questions using Grok API
-#     try:
-#         questions = generate_questions({**data, 'syllabus': syllabus_text}, old_context)
-#     except Exception as e:
-#         flash(f"AI Generation failed: {str(e)}")
-#         return redirect(url_for('index'))
-
-#     if "Error" in questions or not questions:
-#         flash("AI Error: Unable to generate questions. Check API key or try again.")
-#         return redirect(url_for('index'))
-
-#     # Create DOCX file
-#     try:
-#         doc = create_question_paper_doc(data, questions)
-#         docx_filename = f"{data['course_name'].replace(' ', '_')}_{data['year']}.docx"
-#         docx_path = os.path.join(UPLOAD_FOLDER, docx_filename)  # Save in uploads for reliability
-#         doc.save(docx_path)
-#     except Exception as e:
-#         flash(f"Error creating document: {str(e)}")
-#         return redirect(url_for('index'))
-
-#     # Send file for download
-#     return send_file(docx_path, as_attachment=True, download_name=docx_filename)
-
-
-# # Essential for Replit: Listen on 0.0.0.0 and dynamic PORT
-# if __name__ == '__main__':
-#     port = int(os.environ.get('PORT', 8080))
-#     app.run(host='0.0.0.0', port=port, debug=False)  # debug=False in production
-
-
-
-
-
-############  for deploy
-import os
+####
 from flask import Flask, render_template, request, send_file, flash, redirect, url_for
-from werkzeug.utils import secure_filename
-
-# Import your custom modules
+import os
 from utils.ai_generator import generate_questions
 from utils.docx_generator import create_question_paper_doc
 from utils.pdf_extractor import extract_text_from_pdf
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
-# --- CONFIGURATION ---
-# Use a secure secret key from environment variables
-app.secret_key = os.environ.get('SECRET_KEY', 'dev-key-fallback-12345')
+# Use environment variable for secret key (set in Replit Secrets)
+app.secret_key = os.environ.get('SECRET_KEY', 'supersecretkey-change-in-secrets')
 
-# Define paths using absolute paths for cloud compatibility
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+# Use 'uploads' folder — it is persistent on Replit
+UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Ensure the upload directory exists
+# Create uploads folder if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# --- ROUTES ---
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/generate', methods=['POST'])
 def generate():
@@ -278,7 +163,7 @@ def generate():
     syllabus_text = data['syllabus']
     old_text = ""
 
-    # 1. Process Syllabus PDF
+    # Handle syllabus PDF upload
     if 'syllabus_pdf' in request.files:
         file = request.files['syllabus_pdf']
         if file and file.filename:
@@ -289,10 +174,10 @@ def generate():
                 syllabus_text += "\n\n" + extract_text_from_pdf(filepath)
             except Exception as e:
                 flash(f"Error reading syllabus PDF: {str(e)}")
-            # Cleanup: delete raw PDF after extraction to save space
-            if os.path.exists(filepath): os.remove(filepath)
+            # Optional: delete after processing to save space
+            # os.remove(filepath)
 
-    # 2. Process Old Question Papers
+    # Handle old question papers (multiple files)
     if 'old_papers' in request.files:
         files = request.files.getlist('old_papers')
         for file in files:
@@ -304,41 +189,41 @@ def generate():
                     old_text += extract_text_from_pdf(filepath) + "\n"
                 except Exception as e:
                     flash(f"Error reading old paper {filename}: {str(e)}")
-                # Cleanup
-                if os.path.exists(filepath): os.remove(filepath)
+                # Optional: delete after extraction
+                # os.remove(filepath)
 
     old_context = f"Reference previous questions (rephrase all):\n{old_text[:4000]}" if old_text else ""
 
-    # 3. AI Generation via Grok
+    # Generate questions using Grok API
     try:
-        # Note: Ensure utils.ai_generator uses os.environ.get('GROK_API_KEY')
         questions = generate_questions({**data, 'syllabus': syllabus_text}, old_context)
     except Exception as e:
         flash(f"AI Generation failed: {str(e)}")
         return redirect(url_for('index'))
 
     if "Error" in questions or not questions:
-        flash("AI Error: Unable to generate questions. Check API key.")
+        flash("AI Error: Unable to generate questions. Check API key or try again.")
         return redirect(url_for('index'))
 
-    # 4. Create and Save DOCX
+    # Create DOCX file
     try:
         doc = create_question_paper_doc(data, questions)
-        # Clean filename for the download
-        safe_course_name = secure_filename(data['course_name']).replace(' ', '_')
-        docx_filename = f"{safe_course_name}_{data['year']}.docx"
-        docx_path = os.path.join(app.config['UPLOAD_FOLDER'], docx_filename)
+        docx_filename = f"{data['course_name'].replace(' ', '_')}_{data['year']}.docx"
+        docx_path = os.path.join(UPLOAD_FOLDER, docx_filename)  # Save in uploads for reliability
         doc.save(docx_path)
     except Exception as e:
         flash(f"Error creating document: {str(e)}")
         return redirect(url_for('index'))
 
-    # 5. Send file for download
+    # Send file for download
     return send_file(docx_path, as_attachment=True, download_name=docx_filename)
 
-# --- START SERVER ---
+
+# Essential for Replit: Listen on 0.0.0.0 and dynamic PORT
 if __name__ == '__main__':
-    # Northflank uses the PORT environment variable
     port = int(os.environ.get('PORT', 8080))
-    # Threaded=True helps handle multiple small requests
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=port, debug=False)  # debug=False in production
+
+
+
+
