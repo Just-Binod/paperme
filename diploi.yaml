@@ -2,5 +2,3 @@ components:
   - name: Flask
     identifier: flask
     package: https://github.com/diploi/component-flask#main
-    env:
-      PORT: 8080
