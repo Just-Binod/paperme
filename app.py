@@ -118,33 +118,170 @@
 
 
 
-####
+# ####
+# from flask import Flask, render_template, request, send_file, flash, redirect, url_for
+# import os
+# from utils.ai_generator import generate_questions
+# from utils.docx_generator import create_question_paper_doc
+# from utils.pdf_extractor import extract_text_from_pdf
+# from werkzeug.utils import secure_filename
+
+# app = Flask(__name__)
+
+# # Use environment variable for secret key (set in Replit Secrets)
+# app.secret_key = os.environ.get('SECRET_KEY', 'supersecretkey-change-in-secrets')
+
+# # Use 'uploads' folder — it is persistent on Replit
+# UPLOAD_FOLDER = 'uploads'
+# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# # Create uploads folder if it doesn't exist
+# os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# @app.route('/')
+# def index():
+#     return render_template('index.html')
+
+
+# @app.route('/generate', methods=['POST'])
+# def generate():
+#     # Collect form data
+#     data = {
+#         'college_name': request.form.get('college_name', ''),
+#         'college_address': request.form.get('college_address', ''),
+#         'exam_type': request.form.get('exam_type', ''),
+#         'program': request.form.get('program', ''),
+#         'semester': request.form.get('semester', ''),
+#         'course_name': request.form.get('course_name', ''),
+#         'year': request.form.get('year', ''),
+#         'full_marks': request.form.get('full_marks', ''),
+#         'pass_marks': request.form.get('pass_marks', ''),
+#         'time_hours': request.form.get('time_hours', ''),
+#         'syllabus': request.form.get('syllabus', '')
+#     }
+
+#     syllabus_text = data['syllabus']
+#     old_text = ""
+
+#     # Handle syllabus PDF upload
+#     if 'syllabus_pdf' in request.files:
+#         file = request.files['syllabus_pdf']
+#         if file and file.filename:
+#             filename = secure_filename(file.filename)
+#             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#             file.save(filepath)
+#             try:
+#                 syllabus_text += "\n\n" + extract_text_from_pdf(filepath)
+#             except Exception as e:
+#                 flash(f"Error reading syllabus PDF: {str(e)}")
+#             # Optional: delete after processing to save space
+#             # os.remove(filepath)
+
+#     # Handle old question papers (multiple files)
+#     if 'old_papers' in request.files:
+#         files = request.files.getlist('old_papers')
+#         for file in files:
+#             if file and file.filename:
+#                 filename = secure_filename(file.filename)
+#                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#                 file.save(filepath)
+#                 try:
+#                     old_text += extract_text_from_pdf(filepath) + "\n"
+#                 except Exception as e:
+#                     flash(f"Error reading old paper {filename}: {str(e)}")
+#                 # Optional: delete after extraction
+#                 # os.remove(filepath)
+
+#     old_context = f"Reference previous questions (rephrase all):\n{old_text[:4000]}" if old_text else ""
+
+#     # Generate questions using Grok API
+#     try:
+#         questions = generate_questions({**data, 'syllabus': syllabus_text}, old_context)
+#     except Exception as e:
+#         flash(f"AI Generation failed: {str(e)}")
+#         return redirect(url_for('index'))
+
+#     if "Error" in questions or not questions:
+#         flash("AI Error: Unable to generate questions. Check API key or try again.")
+#         return redirect(url_for('index'))
+
+#     # Create DOCX file
+#     try:
+#         doc = create_question_paper_doc(data, questions)
+#         docx_filename = f"{data['course_name'].replace(' ', '_')}_{data['year']}.docx"
+#         docx_path = os.path.join(UPLOAD_FOLDER, docx_filename)  # Save in uploads for reliability
+#         doc.save(docx_path)
+#     except Exception as e:
+#         flash(f"Error creating document: {str(e)}")
+#         return redirect(url_for('index'))
+
+#     # Send file for download
+#     return send_file(docx_path, as_attachment=True, download_name=docx_filename)
+
+
+# # Essential for Replit: Listen on 0.0.0.0 and dynamic PORT
+# if __name__ == '__main__':
+#     port = int(os.environ.get('PORT', 8080))
+#     app.run(host='0.0.0.0', port=port, debug=False)  # debug=False in production
+
+
+
+
+####################
 from flask import Flask, render_template, request, send_file, flash, redirect, url_for
 import os
 from utils.ai_generator import generate_questions
 from utils.docx_generator import create_question_paper_doc
 from utils.pdf_extractor import extract_text_from_pdf
 from werkzeug.utils import secure_filename
+import tempfile
+import shutil
 
 app = Flask(__name__)
 
-# Use environment variable for secret key (set in Replit Secrets)
-app.secret_key = os.environ.get('SECRET_KEY', 'supersecretkey-change-in-secrets')
+# Secret key from environment variable
+app.secret_key = os.environ.get('SECRET_KEY', 'fallback-secret-key-change-this')
 
-# Use 'uploads' folder — it is persistent on Replit
-UPLOAD_FOLDER = 'uploads'
+# Use /tmp for file storage (works on most free platforms)
+UPLOAD_FOLDER = '/tmp/uploads' if os.path.exists('/tmp') else 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-# Create uploads folder if it doesn't exist
+# Create uploads folder
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Allowed extensions
+ALLOWED_EXTENSIONS = {'pdf'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Cleanup old files periodically (prevents storage overflow)
+def cleanup_old_files():
+    try:
+        if os.path.exists(UPLOAD_FOLDER):
+            for filename in os.listdir(UPLOAD_FOLDER):
+                filepath = os.path.join(UPLOAD_FOLDER, filename)
+                if os.path.isfile(filepath):
+                    # Delete files older than 1 hour
+                    if os.path.getmtime(filepath) < (os.time.time() - 3600):
+                        os.remove(filepath)
+    except Exception as e:
+        print(f"Cleanup error: {e}")
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
+@app.route('/health')
+def health():
+    """Health check endpoint for monitoring"""
+    return {'status': 'healthy', 'service': 'question-paper-generator'}, 200
 
 @app.route('/generate', methods=['POST'])
 def generate():
+    cleanup_old_files()  # Clean up before processing
+    
     # Collect form data
     data = {
         'college_name': request.form.get('college_name', ''),
@@ -162,68 +299,89 @@ def generate():
 
     syllabus_text = data['syllabus']
     old_text = ""
+    uploaded_files = []  # Track files for cleanup
 
-    # Handle syllabus PDF upload
-    if 'syllabus_pdf' in request.files:
-        file = request.files['syllabus_pdf']
-        if file and file.filename:
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
-            try:
-                syllabus_text += "\n\n" + extract_text_from_pdf(filepath)
-            except Exception as e:
-                flash(f"Error reading syllabus PDF: {str(e)}")
-            # Optional: delete after processing to save space
-            # os.remove(filepath)
-
-    # Handle old question papers (multiple files)
-    if 'old_papers' in request.files:
-        files = request.files.getlist('old_papers')
-        for file in files:
-            if file and file.filename:
+    try:
+        # Handle syllabus PDF upload
+        if 'syllabus_pdf' in request.files:
+            file = request.files['syllabus_pdf']
+            if file and file.filename and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(filepath)
+                uploaded_files.append(filepath)
                 try:
-                    old_text += extract_text_from_pdf(filepath) + "\n"
+                    syllabus_text += "\n\n" + extract_text_from_pdf(filepath)
                 except Exception as e:
-                    flash(f"Error reading old paper {filename}: {str(e)}")
-                # Optional: delete after extraction
-                # os.remove(filepath)
+                    flash(f"Error reading syllabus PDF: {str(e)}")
 
-    old_context = f"Reference previous questions (rephrase all):\n{old_text[:4000]}" if old_text else ""
+        # Handle old question papers
+        if 'old_papers' in request.files:
+            files = request.files.getlist('old_papers')
+            for file in files:
+                if file and file.filename and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    file.save(filepath)
+                    uploaded_files.append(filepath)
+                    try:
+                        old_text += extract_text_from_pdf(filepath) + "\n"
+                    except Exception as e:
+                        flash(f"Error reading old paper {filename}: {str(e)}")
 
-    # Generate questions using Grok API
-    try:
-        questions = generate_questions({**data, 'syllabus': syllabus_text}, old_context)
-    except Exception as e:
-        flash(f"AI Generation failed: {str(e)}")
-        return redirect(url_for('index'))
+        old_context = f"Reference previous questions (rephrase all):\n{old_text[:4000]}" if old_text else ""
 
-    if "Error" in questions or not questions:
-        flash("AI Error: Unable to generate questions. Check API key or try again.")
-        return redirect(url_for('index'))
+        # Generate questions using Grok API
+        try:
+            questions = generate_questions({**data, 'syllabus': syllabus_text}, old_context)
+        except Exception as e:
+            flash(f"AI Generation failed: {str(e)}")
+            return redirect(url_for('index'))
 
-    # Create DOCX file
-    try:
+        if "Error" in questions or not questions:
+            flash("AI Error: Unable to generate questions. Check API key or try again.")
+            return redirect(url_for('index'))
+
+        # Create DOCX file
         doc = create_question_paper_doc(data, questions)
         docx_filename = f"{data['course_name'].replace(' ', '_')}_{data['year']}.docx"
-        docx_path = os.path.join(UPLOAD_FOLDER, docx_filename)  # Save in uploads for reliability
+        docx_path = os.path.join(app.config['UPLOAD_FOLDER'], docx_filename)
         doc.save(docx_path)
+        
+        # Send file and then clean up
+        response = send_file(docx_path, as_attachment=True, download_name=docx_filename)
+        
+        # Schedule cleanup after send (using after_request won't work with send_file)
+        # So we'll just accept some temporary files
+        
+        return response
+
     except Exception as e:
-        flash(f"Error creating document: {str(e)}")
+        flash(f"Error: {str(e)}")
         return redirect(url_for('index'))
+    
+    finally:
+        # Cleanup uploaded PDFs immediately
+        for filepath in uploaded_files:
+            try:
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+            except:
+                pass
 
-    # Send file for download
-    return send_file(docx_path, as_attachment=True, download_name=docx_filename)
+# Error handlers
+@app.errorhandler(413)
+def too_large(e):
+    flash("File too large. Maximum size is 16MB.")
+    return redirect(url_for('index'))
 
+@app.errorhandler(500)
+def internal_error(e):
+    flash("Internal server error. Please try again.")
+    return redirect(url_for('index'))
 
-# Essential for Replit: Listen on 0.0.0.0 and dynamic PORT
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port, debug=False)  # debug=False in production
+    port = int(os.environ.get('PORT', 10000))  # Render uses 10000 by default
+    app.run(host='0.0.0.0', port=port, debug=False)
 
-
-
-
+###############
