@@ -74,13 +74,13 @@ def create_question_paper_doc(data, questions_text):
                 
             p = doc.add_paragraph(line)
             
-            # Format question numbers
-            if line and line[0].isdigit() and '.' in line[:3]:
-                p.runs[0].bold = True
+            # # Format question numbers
+            # if line and line[0].isdigit() and '.' in line[:3]:
+            #     p.runs[0].bold = True
             
-            # Indent sub-questions
-            elif line.startswith(('a)', 'b)', 'OR', 'i)', 'ii)', 'iii)')):
-                p.paragraph_format.left_indent = Inches(0.5)
+            # # Indent sub-questions
+            # elif line.startswith(('a)', 'b)', 'OR', 'i)', 'ii)', 'iii)')):
+            #     p.paragraph_format.left_indent = Inches(0.5)
             
             # Set font for all runs
             for run in p.runs:
